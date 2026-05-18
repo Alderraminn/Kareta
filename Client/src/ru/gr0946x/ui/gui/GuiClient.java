@@ -231,6 +231,7 @@ public class GuiClient extends JFrame {
             active.setCaretPosition(active.getDocument().getLength());
         });
     }
+
     private void updateUserList(String csv) {
         listModel.clear();
         if (!csv.isEmpty()) {
@@ -258,7 +259,7 @@ public class GuiClient extends JFrame {
             client.sendData(MessageType.MSG_ALL + ":" + text);
         } else {
             if (selectedUser == null) {
-                JOptionPane.showMessageDialog(this, "Выберите собеседника из списка слева");
+                JOptionPane.showMessageDialog(this, "Выберите собеседника");
                 return;
             }
             client.sendData(MessageType.MSG + ":" + selectedUser + ":" + text);

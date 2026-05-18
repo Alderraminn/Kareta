@@ -27,7 +27,7 @@ public class ConnectedClient {
     }
 
     public void start() {
-        sendCommand(MessageType.REQUEST, "Введите логин и пароль в формате: " + MessageType.LOGIN + ":логин:пароль");
+        sendCommand(MessageType.REQUEST, "Введите " + MessageType.LOGIN + ":логин:пароль");
         communicator.start();
     }
 
@@ -48,7 +48,7 @@ public class ConnectedClient {
     private void handleAuth(String input) {
         String[] parts = input.split(ProtocolConstants.COMMAND_SEPARATOR, 3);
         if (parts.length != 3) {
-            sendCommand(MessageType.ERROR, "Неверный формат: " + MessageType.LOGIN + ":логин:пароль");
+            sendCommand(MessageType.ERROR, "Неверный формат");
             return;
         }
         String action = parts[0].trim().toUpperCase();
@@ -77,7 +77,7 @@ public class ConnectedClient {
             } else sendCommand(MessageType.ERROR, "Ошибка регистрации");
         }
         else {
-            sendCommand(MessageType.ERROR, "Неизвестная команда. Используйте " + MessageType.LOGIN + " или " + MessageType.REGISTER);
+            sendCommand(MessageType.ERROR, "Неизвестная команда");
         }
     }
 
@@ -99,7 +99,7 @@ public class ConnectedClient {
             if (input.startsWith(MessageType.SEARCH_CMD)) {
                 String[] searchParts = input.substring(MessageType.SEARCH_CMD.length()).trim().split(" ", 2);
                 if (searchParts.length == 2) handleSearch(searchParts[0].trim(), searchParts[1].trim());
-                else sendCommand(MessageType.ERROR, "Формат: " + MessageType.SEARCH_CMD.trim() + " <ник> <слово>");
+                else sendCommand(MessageType.ERROR, "Формат ошибки");
                 return;
             }
             if (input.startsWith(MessageType.MSG_CMD)) {
@@ -135,7 +135,7 @@ public class ConnectedClient {
     private void sendPrivateMessage(String recipientNickname, String text) {
         var recipientOpt = dbManager.getUserByNickname(recipientNickname);
         if (recipientOpt.isEmpty()) {
-            sendCommand(MessageType.ERROR, "Пользователь '" + recipientNickname + "' не найден");
+            sendCommand(MessageType.ERROR, "Пользователь не найден");
             return;
         }
         User recipient = recipientOpt.get();
@@ -146,19 +146,19 @@ public class ConnectedClient {
             String formatted = "ЛС от " + user.getNickname() + ProtocolConstants.AUTHOR_SEPARATOR + text;
             recipientClient.sendCommand(MessageType.MESSAGE, formatted);
         }
-        sendCommand(MessageType.INFO, "Сообщение отправлено пользователю " + recipientNickname);
+        sendCommand(MessageType.INFO, "Сообщение отправлено");
     }
 
     private void handleHistory(String targetNick) {
         var targetOpt = dbManager.getUserByNickname(targetNick);
         if (targetOpt.isEmpty()) {
-            sendCommand(MessageType.ERROR, "Пользователь '" + targetNick + "' не найден");
+            sendCommand(MessageType.ERROR, "Пользователь не найден");
             return;
         }
         User target = targetOpt.get();
         List<Message> history = dbManager.getConversationHistory(user, target, 10);
         if (history.isEmpty()) {
-            sendCommand(MessageType.INFO, "HISTORY:Нет сообщений с " + targetNick);
+            sendCommand(MessageType.INFO, "HISTORY:Нет сообщений");
             return;
         }
         Collections.reverse(history);
@@ -175,13 +175,13 @@ public class ConnectedClient {
     private void handleSearch(String targetNick, String keyword) {
         var targetOpt = dbManager.getUserByNickname(targetNick);
         if (targetOpt.isEmpty()) {
-            sendCommand(MessageType.ERROR, "Пользователь '" + targetNick + "' не найден");
+            sendCommand(MessageType.ERROR, "Пользователь не найден");
             return;
         }
         User target = targetOpt.get();
         List<Message> results = dbManager.searchMessages(user, target, keyword);
         if (results.isEmpty()) {
-            sendCommand(MessageType.INFO, "SEARCH:Сообщения с '" + keyword + "' не найдены");
+            sendCommand(MessageType.INFO, "SEARCH:Ничего не найдено");
             return;
         }
         Collections.reverse(results);
