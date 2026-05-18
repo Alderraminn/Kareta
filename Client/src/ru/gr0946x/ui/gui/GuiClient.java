@@ -12,7 +12,7 @@ import java.io.IOException;
 public class GuiClient extends JFrame {
     private Client client;
     private String currentUser;
-    private String selectedUser = null; // текущий собеседник
+    private String selectedUser = null;
 
     private DefaultListModel<String> listModel = new DefaultListModel<>();
     private JTextPane generalChat, personalChat;
@@ -21,7 +21,6 @@ public class GuiClient extends JFrame {
     private JPasswordField passField;
     private JLabel statusLabel, chatTitle;
     private JTabbedPane chatTabs;
-
 
     private final Color BG = new Color(248, 249, 250);
     private final Color ACCENT = new Color(0, 122, 204);
@@ -87,15 +86,15 @@ public class GuiClient extends JFrame {
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
         auth.add(statusLabel, gbc);
 
-        btnLogin.addActionListener(e -> auth("LOGIN"));
-        btnReg.addActionListener(e -> auth("REGISTER"));
-        loginField.addActionListener(e -> auth("LOGIN"));
-        passField.addActionListener(e -> auth("LOGIN"));
+        btnLogin.addActionListener(e -> auth(MessageType.LOGIN));
+        btnReg.addActionListener(e -> auth(MessageType.REGISTER));
+        loginField.addActionListener(e -> auth(MessageType.LOGIN));
+        passField.addActionListener(e -> auth(MessageType.LOGIN));
 
         getContentPane().add(auth, BorderLayout.CENTER);
     }
 
-    private void auth(String type) {
+    private void auth(String cmd) {
         String login = loginField.getText().trim();
         String pass = new String(passField.getPassword()).trim();
         if (login.isEmpty() || pass.isEmpty()) {
@@ -105,7 +104,7 @@ public class GuiClient extends JFrame {
             client = new Client("localhost", 9460);
             client.addDataListener(this::onMessage);
             client.start();
-            client.sendData(type + ":" + login + ":" + pass);
+            client.sendData(cmd + ":" + login + ":" + pass);
             currentUser = login;
             statusLabel.setText("Подключение...");
         } catch (IOException ex) {
@@ -119,7 +118,6 @@ public class GuiClient extends JFrame {
         main.setBackground(BG);
         main.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-
         JList<String> userList = new JList<>(listModel);
         userList.setFont(FONT);
         userList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -127,15 +125,11 @@ public class GuiClient extends JFrame {
             if (!e.getValueIsAdjusting()) {
                 selectedUser = userList.getSelectedValue();
                 if (selectedUser != null && !selectedUser.equals(currentUser)) {
-                    chatTabs.setSelectedIndex(1); //
+                    chatTabs.setSelectedIndex(1);
                     chatTabs.setTitleAt(1, "Личный с @" + selectedUser);
-                    try {
-                        docPers.remove(0, docPers.getLength());
-                    } catch (javax.swing.text.BadLocationException ignored) {
-
-                    }
+                    personalChat.setText("");
                     appendSys(docPers, "Загрузка истории...");
-                    client.sendData("/history " + selectedUser);
+                    client.sendData(MessageType.HISTORY_CMD + selectedUser);
                 }
             }
         });
@@ -145,7 +139,6 @@ public class GuiClient extends JFrame {
         listPanel.add(new JScrollPane(userList), BorderLayout.CENTER);
         main.add(listPanel, BorderLayout.WEST);
 
-        // Область чатов (вкладки)
         chatTabs = new JTabbedPane();
         chatTabs.setFont(FONT_SMALL);
         chatTabs.addTab("Общий чат", new JScrollPane(generalChat));
@@ -174,35 +167,17 @@ public class GuiClient extends JFrame {
         centerPanel.add(chatTabs, BorderLayout.CENTER);
         main.add(centerPanel, BorderLayout.CENTER);
 
-
         JPanel inputPanel = new JPanel(new BorderLayout(8, 8));
         inputPanel.setBackground(Color.WHITE);
         inputPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(new Color(210,210,210)), "Сообщение"));
         inputField = new JTextField();
         inputField.setFont(FONT);
-        inputField.setToolTipText("Введите текст. GUI сам выберет адресата по активной вкладке.");
 
         JButton btnSend = new JButton("Отправить");
         btnSend.addActionListener(e -> send());
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(btnSend, BorderLayout.EAST);
-
-
-        JLabel commandHint = new JLabel(
-                " Подсказки: клик на контакт → личный чат | /history ник | /search ник слово | Enter для отправки",
-                SwingConstants.CENTER
-        );
-        commandHint.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        commandHint.setForeground(SYS_MSG);
-        commandHint.setBorder(new EmptyBorder(6, 0, 4, 0));
-
-
-        JPanel southContainer = new JPanel(new BorderLayout(0, 0));
-        southContainer.setBackground(BG);
-        southContainer.add(inputPanel, BorderLayout.CENTER);
-        southContainer.add(commandHint, BorderLayout.SOUTH);
-
-        main.add(southContainer, BorderLayout.SOUTH);
+        main.add(inputPanel, BorderLayout.SOUTH);
 
         inputField.addActionListener(e -> send());
         getContentPane().add(main, BorderLayout.CENTER);
@@ -213,61 +188,49 @@ public class GuiClient extends JFrame {
         SwingUtilities.invokeLater(() -> {
             switch (type) {
                 case INFO:
-                    if (data.startsWith("USER_LIST:")) {
-                        updateUserList(data.substring(10));
-                    }
+                    if (data.startsWith("USER_LIST:")) updateUserList(data.substring(10));
                     else if (data.startsWith("HISTORY:") || data.startsWith("SEARCH:")) {
-
-                        StyledDocument targetDoc = (chatTabs.getSelectedIndex() == 1) ? docPers : docGen;
-
-                        String prefix = data.startsWith("HISTORY:") ? "📜" : "";
-                        appendSys(targetDoc, prefix + " Результаты:");
-
+                        StyledDocument doc = (chatTabs.getSelectedIndex() == 1) ? docPers : docGen;
+                        appendSys(doc, (data.startsWith("HISTORY:") ? "" : "") + "Результаты:");
                         String content = data.substring(data.indexOf(':') + 1);
-
                         String[] lines = content.split("␤");
                         for (String line : lines) {
                             if (!line.trim().isEmpty()) {
-                                appendText(targetDoc, line, SYS_MSG, StyleConstants.ALIGN_LEFT);
+                                appendText(doc, line, SYS_MSG, StyleConstants.ALIGN_LEFT);
                             }
                         }
                     }
                     else if (data.contains("Добро пожаловать")) {
-                        statusLabel.setText("✅ " + data);
+                        statusLabel.setText(" " + data);
                         initChat();
                     }
-                    else {
-                        appendSys(docGen, data);
-                    }
+                    else appendSys(docGen, data);
                     break;
 
                 case MESSAGE:
                     boolean isPrivate = data.startsWith("ЛС от ");
                     StyledDocument targetDoc = isPrivate ? docPers : docGen;
 
-                    // Если пришло личное, а открыта вкладка общего -> переключаем
                     if (isPrivate && chatTabs.getSelectedIndex() == 0) {
                         chatTabs.setSelectedIndex(1);
                     }
 
+                    boolean isMine = data.contains("[" + currentUser + "]") || data.startsWith("ЛС от " + currentUser);
+                    Color color = isMine ? MY_MSG : (isPrivate ? ACCENT : OTHER_MSG);
+                    int align = isMine ? StyleConstants.ALIGN_RIGHT : StyleConstants.ALIGN_LEFT;
 
-                    String clean = data.replace("ЛС от ", "");
-                    Color color = isPrivate ? ACCENT : OTHER_MSG;
-                    int align = StyleConstants.ALIGN_LEFT;
-
-                    appendText(targetDoc, (isPrivate ? "🔒 " : " ") + clean, color, align);
+                    String clean = data.replace("ЛС от ", "").replace("[" + currentUser + "]", "[Вы]");
+                    appendText(targetDoc, (isPrivate ? " " : " ") + clean, color, align);
                     break;
 
                 case ERROR:
                     JOptionPane.showMessageDialog(this, "Ошибка: " + data);
                     break;
             }
-
             JTextPane active = chatTabs.getSelectedIndex() == 0 ? generalChat : personalChat;
             active.setCaretPosition(active.getDocument().getLength());
         });
     }
-
     private void updateUserList(String csv) {
         listModel.clear();
         if (!csv.isEmpty()) {
@@ -282,25 +245,23 @@ public class GuiClient extends JFrame {
         String text = inputField.getText().trim();
         if (text.isEmpty()) return;
 
-
         if (text.startsWith("/")) {
             client.sendData(text);
             inputField.setText("");
             return;
         }
 
-
         StyledDocument targetDoc = (chatTabs.getSelectedIndex() == 0) ? docGen : docPers;
         appendText(targetDoc, " [Вы] " + text, MY_MSG, StyleConstants.ALIGN_RIGHT);
 
         if (chatTabs.getSelectedIndex() == 0) {
-            client.sendData("MSG_ALL:" + text);
+            client.sendData(MessageType.MSG_ALL + ":" + text);
         } else {
             if (selectedUser == null) {
                 JOptionPane.showMessageDialog(this, "Выберите собеседника из списка слева");
                 return;
             }
-            client.sendData("MSG:" + selectedUser + ":" + text);
+            client.sendData(MessageType.MSG + ":" + selectedUser + ":" + text);
         }
 
         inputField.setText("");
