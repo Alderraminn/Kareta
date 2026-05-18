@@ -35,10 +35,13 @@ public class Client {
     private void parseData(String data){
         var fullInfo = data.split(ProtocolConstants.COMMAND_SEPARATOR, 2);
         if (fullInfo.length == 2) {
-            var type = MessageType.valueOf(fullInfo[0]);
-
-            for (var listener : listeners) {
-                listener.accept(fullInfo[1], type);
+            try {
+                var type = MessageType.valueOf(fullInfo[0]);
+                for (var listener : listeners) {
+                    listener.accept(fullInfo[1], type);
+                }
+            } catch (IllegalArgumentException e) {
+                System.err.println("Неизвестный тип сообщения: " + fullInfo[0]);
             }
         }
     }

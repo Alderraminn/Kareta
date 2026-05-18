@@ -21,9 +21,7 @@ public class Server {
                         var connClient = new ConnectedClient(socket);
                         connClient.start();
                     } catch (Exception e) {
-                        System.out.println("Ошибка подключения клиентов...");
-                        System.out.println(e.getMessage());
-                        isActive = false;
+                        System.err.println("Ошибка при подключении клиента: " + e.getMessage());
                     }
                 }
             } catch (IOException e) {

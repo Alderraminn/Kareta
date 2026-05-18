@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="springframework.spring.orm" type="repository">
+    <properties maven-id="org.springframework:spring-orm:6.1.6" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-orm/6.1.6/spring-orm-6.1.6.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-beans/6.1.6/spring-beans-6.1.6.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-core/6.1.6/spring-core-6.1.6.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-jcl/6.1.6/spring-jcl-6.1.6.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-jdbc/6.1.6/spring-jdbc-6.1.6.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/springframework/spring-tx/6.1.6/spring-tx-6.1.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
